@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Landino AI Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'primary': '#1e293b', // slate-800
+              'secondary': '#334155', // slate-700
+              'accent': '#4f46e5', // indigo-600
+              'light': '#cbd5e1', // slate-300
+              'super-light': '#94a3b8', // slate-400
+            },
+          },
+        },
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/client": "https://esm.sh/react-dom@^19.1.0/client",
+    "@google/genai": "https://esm.sh/@google/genai@^1.8.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/"
+  }
+}
+</script>
+<style>
+  /* Custom scrollbar for a more integrated look */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #1e293b; /* primary */
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #475569; /* slate-600 */
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #64748b; /* slate-500 */
+  }
+</style>
+</head>
+  <body class="bg-primary">
+    <div id="root"></div>
+    <script type="module">
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { GoogleGenAI } from '@google/genai';
+
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+//================================================================
+// INLINED: types.ts
+//================================================================
+
+// No actual code, just type definitions for the components below.
+// They are used for clarity but are compiled away.
+
+//================================================================
+// INLINED: Icon Components
+//================================================================
+
+const BotIcon = (props) => (
+  React.createElement('svg', {
+    ...props,
+    xmlns: "http://www.w3.org/2000/svg",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  },
+    React.createElement('rect', { x: "2", y: "8", width: "20", height: "12", rx: "2" }),
+    React.createElement('path', { d: "M6 4h12" }),
+    React.createElement('path', { d: "M12 4v4" }),
+    React.createElement('circle', { cx: "12", cy: "14", r: "2" }),
+    React.createElement('path', { d: "M10 18h4" })
+  )
+);
+
+const CheckIcon = (props) => (
+  React.createElement('svg', { ...props, xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement('polyline', { points: "20 6 9 17 4 12" })
+  )
+);
+
+const CheckSquareIcon = (props) => (
+  React.createElement('svg', { ...props, xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement('polyline', { points: "9 11 12 14 22 4" }),
+    React.createElement('path', { d: "M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" })
+  )
+);
+
+const CopyIcon = (props) => (
+  React.createElement('svg', { ...props, xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement('rect', { x: "9", y: "9", width: "13", height: "13", rx: "2", ry: "2" }),
+    React.createElement('path', { d: "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" })
+  )
+);
+
+const ImageIcon = (props) => (
+  React.createElement('svg', { ...props, xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement('rect', { x: "3", y: "3", width: "18", height: "18", rx: "2", ry: "2" }),
+    React.createElement('circle', { cx: "8.5", cy: "8.5", r: "1.5" }),
+    React.createElement('polyline', { points: "21 15 16 10 5 21" })
+  )
+);
+
+const LogInIcon = (props) => (
+  React.createElement('svg', { ...props, xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement('path', { d: "M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" }),
+    React.createElement('polyline', { points: "10 17 15 12 10 7" }),
+    React.createElement('line', { x1: "15", y1: "12", x2: "3", y2: "12" })
+  )
+);
+
+const LogOutIcon = (props) => (
+  React.createElement('svg', { ...props, xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement('path', { d: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" }),
+    React.createElement('polyline', { points: "16 17 21 12 16 7" }),
+    React.createElement('line', { x1: "21", y1: "12", x2: "9", y2: "12" })
+  )
+);
+
+const MessageSquareIcon = (props) => (
+  React.createElement('svg', { ...props, xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement('path', { d: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" })
+  )
+);
+
+const MicrophoneIcon = (props) => (
+  React.createElement('svg', { ...props, xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement('path', { d: "M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" }),
+    React.createElement('path', { d: "M19 10v2a7 7 0 0 1-14 0v-2" }),
+    React.createElement('line', { x1: "12", y1: "19", x2: "12", y2: "23" }),
+    React.createElement('line', { x1: "8", y1: "23", x2: "16", y2: "23" })
+  )
+);
+
+const PaperclipIcon = (props) => (
+  React.createElement('svg', { ...props, xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement('path', { d: "m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" })
+  )
+);
+
+const PlusIcon = (props) => (
+  React.createElement('svg', { ...props, xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement('line', { x1: "12", y1: "5", x2: "12", y2: "19" }),
+    React.createElement('line', { x1: "5", y1: "12", x2: "19", y2: "12" })
+  )
+);
+
+const SendIcon = (props) => (
+  React.createElement('svg', {
+    ...props,
+    xmlns: "http://www.w3.org/2000/svg",
+    viewBox: "0 0 24 24",
+    fill: "currentColor",
+    stroke: "none"
+  },
+    React.createElement('path', { d: "M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" })
+  )
+);
+
+const SpeakerIcon = (props) => (
+  React.createElement('svg', {
+    ...props,
+    xmlns: "http://www.w3.org/2000/svg",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  },
+    React.createElement('polygon', { points: "11 5 6 9 2 9 2 15 6 15 11 19 11 5" }),
+    React.createElement('path', { d: "M15.54 8.46a5 5 0 0 1 0 7.07" })
+  )
+);
+
+const SparkleIcon = (props) => (
+  React.createElement('svg', { ...props, xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement('path', { d: "M12 3L9.75 9.75L3 12L9.75 14.25L12 21L14.25 14.25L21 12L14.25 9.75L12 3Z" }),
+    React.createElement('path', { d: "M4 4L5 6" }),
+    React.createElement('path', { d: "M19 19L20 21" }),
+    React.createElement('path', { d: "M20 4L19 6" }),
+    React.createElement('path', { d: "M4 20L5 18" })
+  )
+);
+
+const TrashIcon = (props) => (
+  React.createElement('svg', { ...props, xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement('polyline', { points: "3 6 5 6 21 6" }),
+    React.createElement('path', { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" })
+  )
+);
+
+const UserIcon = (props) => (
+  React.createElement('svg', { ...props, xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement('path', { d: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" }),
+    React.createElement('circle', { cx: "12", cy: "7", r: "4" })
+  )
+);
+
+const XCircleIcon = (props) => (
+  React.createElement('svg', { ...props, xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "currentColor" },
+    React.createElement('path', {
+      fillRule: "evenodd",
+      d: "M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.72 6.97a.75.75 0 10-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 101.06 1.06L12 13.06l1.72 1.72a.75.75 0 101.06-1.06L13.06 12l1.72-1.72a.75.75 0 10-1.06-1.06L12 10.94l-1.72-1.72z",
+      clipRule: "evenodd"
+    })
+  )
+);
+
+
+//================================================================
+// INLINED: Core Components
+//================================================================
+
+const CodeBlock = ({ language, code }) => {
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
+  return (
+    React.createElement('div', { className: "bg-primary my-4 rounded-md overflow-hidden border border-slate-600" },
+      React.createElement('div', { className: "flex justify-between items-center px-4 py-2 bg-slate-700/50 text-xs text-super-light" },
+        React.createElement('span', null, language),
+        React.createElement('button', { onClick: handleCopy, className: "flex items-center gap-1.5 text-xs" },
+          isCopied ? (
+            React.createElement(React.Fragment, null,
+              React.createElement(CheckIcon, { className: "w-3 h-3 text-green-400" }),
+              "Copied!"
+            )
+          ) : (
+            React.createElement(React.Fragment, null,
+              React.createElement(CopyIcon, { className: "w-3 h-3" }),
+              "Copy code"
+            )
+          )
+        )
+      ),
+      React.createElement('pre', { className: "p-4 text-sm overflow-x-auto" },
+        React.createElement('code', null, code)
+      )
+    )
+  );
+};
+
+const WelcomeScreen = ({ onPromptClick }) => {
+  const suggestedPrompts = [
+    { title: 'Write a poem', content: 'about the ocean and the moon.' },
+    { title: 'Explain a concept', content: 'like quantum computing in simple terms.' },
+    { title: 'Generate an image', content: '/imagine a photorealistic astronaut riding a horse' },
+    { title: 'Generate code', content: 'for a React button component in TypeScript.' },
+  ];
+
+  return (
+    React.createElement('div', { className: "flex flex-col items-center justify-center h-full text-center p-4" },
+      React.createElement('div', { className: "p-4 bg-accent rounded-full mb-4" },
+        React.createElement(SparkleIcon, { className: "w-12 h-12 text-white" })
+      ),
+      React.createElement('h2', { className: "text-4xl md:text-5xl font-bold text-white mb-2" }, "Hello, I'm Landino"),
+      React.createElement('p', { className: "text-lg text-light mb-12" }, "How can I help you today?"),
+      React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl" },
+        suggestedPrompts.map((prompt) => (
+          React.createElement('button', {
+            key: prompt.title,
+            onClick: () => onPromptClick(prompt.content.startsWith('/') ? prompt.content : `${prompt.title} ${prompt.content}`),
+            className: "p-4 bg-secondary rounded-lg text-left hover:bg-slate-600 transition-transform transform hover:-translate-y-1"
+          },
+            React.createElement('h3', { className: "font-semibold text-white" }, prompt.title),
+            React.createElement('p', { className: "text-sm text-light" }, prompt.content)
+          )
+        ))
+      )
+    )
+  );
+};
+
+const TypingIndicator = () => (
+    React.createElement('div', { className: "typing-indicator" },
+        React.createElement('span'), React.createElement('span'), React.createElement('span'),
+        React.createElement('style', null, `
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background-color: #94a3b8;
+            border-radius: 50%;
+            display: inline-block;
+            animation: bounce 1.3s infinite;
+        }
+        .typing-indicator span:nth-of-type(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-of-type(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 75%, 100% { transform: translateY(0); }
+            25% { transform: translateY(-8px); }
+        }
+      `)
+    )
+);
+
+const parseMarkdown = (text) => {
+  const codeBlockRegex = /s*```(\w*)\n([\s\S]*?)\n```s*/g;
+  const parts = text.split(codeBlockRegex);
+
+  return parts.map((part, index) => {
+    if (index % 3 === 2) { // Code block content
+      const language = parts[index - 1] || 'text';
+      return React.createElement(CodeBlock, { key: index, language: language, code: part });
+    } else if (index % 3 === 0) { // Regular text
+      const inlineRegex = /(\*\*.*?\*\*|\*.*?\*|_.*?_|`.*?`)/g;
+      const inlineParts = part.split(inlineRegex);
+
+      return inlineParts.map((inlinePart, inlineIndex) => {
+        if (inlinePart.startsWith('**') && inlinePart.endsWith('**')) {
+          return React.createElement('strong', { key: inlineIndex }, inlinePart.slice(2, -2));
+        }
+        if ((inlinePart.startsWith('*') && inlinePart.endsWith('*')) || (inlinePart.startsWith('_') && inlinePart.endsWith('_'))) {
+          return React.createElement('em', { key: inlineIndex }, inlinePart.slice(1, -1));
+        }
+        if (inlinePart.startsWith('`') && inlinePart.endsWith('`')) {
+          return React.createElement('code', { key: inlineIndex, className: "bg-primary px-1.5 py-1 rounded-md text-sm font-mono text-light" }, inlinePart.slice(1, -1));
+        }
+        
+        return inlinePart.split('\n').map((line, lineIndex, arr) => (
+          React.createElement('span', { key: lineIndex }, line, lineIndex < arr.length - 1 && React.createElement('br'))
+        ));
+      });
+    }
+    return null;
+  });
+};
+
+const ChatMessage = ({ message }) => {
+  const isModel = message.role === 'model';
+  const hasSpeech = 'speechSynthesis' in window;
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const handleToggleSpeech = (text) => {
+    if (!hasSpeech) return;
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    } else {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        window.speechSynthesis.speak(utterance);
+        setIsSpeaking(true);
+    }
+  };
+  
+  useEffect(() => {
+    return () => {
+        if(isSpeaking) window.speechSynthesis.cancel();
+    }
+  }, [isSpeaking]);
+
+  const getIcon = () => {
+    if (!isModel) return React.createElement(UserIcon, { className: "w-5 h-5 md:w-6 md:h-6 text-light" });
+    if (message.generatedImageUrl) return React.createElement(ImageIcon, { className: "w-5 h-5 md:w-6 md:h-6 text-light" });
+    return React.createElement(BotIcon, { className: "w-5 h-5 md:w-6 md:h-6 text-light" });
+  }
+
+  return (
+    React.createElement('div', { className: `flex items-start gap-3 md:gap-4 ${!isModel && 'justify-end'}` },
+      React.createElement('div', { className: `flex items-start gap-3 md:gap-4 ${isModel ? 'flex-row' : 'flex-row-reverse'}` },
+        React.createElement('div', { className: "w-8 h-8 md:w-10 md:h-10 flex-shrink-0 bg-secondary rounded-full flex items-center justify-center" }, getIcon()),
+        React.createElement('div', { className: `flex flex-col gap-2 max-w-xl md:max-w-2xl lg:max-w-3xl animate-fade-in ${isModel ? 'items-start' : 'items-end'}` },
+            React.createElement('div', { className: `rounded-lg p-3 md:p-4 ${isModel ? 'bg-secondary' : 'bg-accent text-white'}` },
+                message.image && React.createElement('img', { src: message.image, alt: "User upload", className: "rounded-lg mb-2 max-w-xs max-h-64" }),
+                message.generatedImageUrl && React.createElement('img', { src: message.generatedImageUrl, alt: "AI generated image", className: "rounded-lg mb-2 max-w-sm max-h-96" }),
+                React.createElement('div', { className: "prose prose-invert prose-sm md:prose-base text-inherit whitespace-pre-wrap break-words" },
+                    message.isLoading ? React.createElement(TypingIndicator) : (message.content ? parseMarkdown(message.content) : null)
+                )
+            ),
+            isModel && message.content && !message.isLoading && hasSpeech && (
+                React.createElement('button', {
+                    onClick: () => handleToggleSpeech(message.content),
+                    className: `p-1.5 rounded-full transition-colors ${isSpeaking ? 'bg-accent text-white' : 'bg-secondary text-super-light hover:bg-slate-600'}`,
+                    'aria-label': isSpeaking ? "Stop speaking" : "Read message aloud"
+                },
+                    React.createElement(SpeakerIcon, { className: "w-4 h-4" })
+                )
+            )
+        )
+      ),
+      React.createElement('style', null, `
+        .prose a { color: #818cf8; }
+        .prose strong { color: #fafafa; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      `)
+    )
+  );
+};
+
+const ChatInput = ({ onSendMessage, isLoading, hint }) => {
+  const [text, setText] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [isListening, setIsListening] = useState(false);
+  
+  const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const recognitionRef = useRef(null);
+
+  const hasSpeechRecognition = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const scrollHeight = textareaRef.current.scrollHeight;
+      textareaRef.current.style.height = `${Math.min(scrollHeight, 200)}px`;
+    }
+  }, [text]);
+
+  useEffect(() => {
+    if (!hasSpeechRecognition) return;
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognitionRef.current = new SpeechRecognition();
+    const recognition = recognitionRef.current;
+    
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+    };
+
+    recognition.onresult = (event) => {
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      setText(prev => prev + finalTranscript);
+    };
+    
+    return () => {
+        if(recognition) recognition.stop();
+    };
+  }, [hasSpeechRecognition]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (text.trim() || imageFile) {
+      onSendMessage(text, imageFile ?? undefined);
+      setText('');
+      removeImage();
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setImagePreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+    } else {
+      recognitionRef.current?.start();
+    }
+  };
+
+  return (
+    React.createElement('div', { className: "w-full max-w-3xl mx-auto" },
+        imagePreview && (
+            React.createElement('div', { className: "mb-2 p-2 bg-secondary rounded-lg w-fit relative" },
+                React.createElement('img', { src: imagePreview, alt: "Selected preview", className: "h-20 w-20 object-cover rounded-md" }),
+                React.createElement('button', { 
+                    onClick: removeImage, 
+                    className: "absolute -top-2 -right-2 bg-primary rounded-full text-light hover:text-white",
+                    'aria-label': "Remove image"
+                },
+                    React.createElement(XCircleIcon, { className: "w-6 h-6"})
+                )
+            )
+        ),
+        React.createElement('div', { className: "bg-secondary p-2 rounded-lg" },
+          React.createElement('form', { onSubmit: handleSubmit, className: "flex items-end gap-2" },
+            React.createElement('button', {
+                type: "button",
+                onClick: () => fileInputRef.current?.click(),
+                disabled: isLoading,
+                className: "p-2 rounded-md text-super-light hover:text-light disabled:opacity-50 transition-colors",
+                'aria-label': "Attach image"
+            },
+                React.createElement(PaperclipIcon, { className: "w-5 h-5" })
+            ),
+            React.createElement('input', {
+                type: "file",
+                ref: fileInputRef,
+                onChange: handleImageChange,
+                className: "hidden",
+                accept: "image/*"
+            }),
+            React.createElement('textarea', {
+                ref: textareaRef,
+                value: text,
+                onChange: (e) => setText(e.target.value),
+                onKeyDown: handleKeyDown,
+                placeholder: "Message Landino...",
+                rows: 1,
+                className: "flex-1 bg-transparent resize-none outline-none p-2 text-light placeholder-super-light disabled:opacity-50 max-h-[200px]",
+                disabled: isLoading
+            }),
+            hasSpeechRecognition && (
+                React.createElement('button', {
+                    type: "button",
+                    onClick: toggleListening,
+                    disabled: isLoading,
+                    className: `p-2 rounded-md transition-colors ${isListening ? 'text-accent' : 'text-super-light hover:text-light'} disabled:opacity-50`,
+                    'aria-label': isListening ? "Stop listening" : "Start listening"
+                },
+                    React.createElement(MicrophoneIcon, { className: "w-5 h-5" })
+                )
+            ),
+            React.createElement('button', {
+                type: "submit",
+                disabled: isLoading || (!text.trim() && !imageFile),
+                className: "p-2 rounded-md bg-accent text-white disabled:bg-gray-500 disabled:cursor-not-allowed hover:bg-opacity-90 transition-colors",
+                'aria-label': "Send message"
+            },
+                React.createElement(SendIcon, { className: "w-5 h-5" })
+            )
+          ),
+          hint && React.createElement('p', { className: "text-xs text-super-light pt-1.5 px-2" }, hint)
+        )
+    )
+  );
+};
+
+const SignInModal = ({ isOpen, onSignIn }) => {
+  const [name, setName] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (name.trim()) {
+      onSignIn(name.trim());
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    React.createElement('div', { className: "fixed inset-0 bg-primary bg-opacity-90 flex items-center justify-center z-50" },
+      React.createElement('div', { className: "bg-secondary p-8 rounded-lg shadow-2xl w-full max-w-sm text-center animate-fade-in" },
+        React.createElement('div', { className: "flex justify-center mb-6" },
+            React.createElement('div', { className: "p-3 bg-accent rounded-full" },
+                React.createElement(SparkleIcon, { className: "w-10 h-10 text-white" })
+            )
+        ),
+        React.createElement('h2', { className: "text-2xl font-bold text-white mb-2" }, "Welcome to Landino"),
+        React.createElement('p', { className: "text-light mb-6" }, "Please enter your name to continue."),
+        React.createElement('form', { onSubmit: handleSubmit },
+          React.createElement('input', {
+            type: "text",
+            value: name,
+            onChange: (e) => setName(e.target.value),
+            placeholder: "Your Name",
+            className: "w-full bg-primary border border-slate-600 text-light rounded-md p-3 mb-4 focus:outline-none focus:ring-2 focus:ring-accent",
+            autoFocus: true
+          }),
+          React.createElement('button', {
+            type: "submit",
+            className: "w-full bg-accent text-white font-bold py-3 px-4 rounded-md hover:bg-opacity-90 transition-colors disabled:bg-gray-500",
+            disabled: !name.trim()
+          },
+            "Sign In"
+          )
+        ),
+         React.createElement('style', null, `
+            .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
+            @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        `)
+      )
+    )
+  );
+};
+
+const TasksView = ({ tasks, setTasks }) => {
+  const [newTaskText, setNewTaskText] = useState('');
+
+  const handleAddTask = (e) => {
+    e.preventDefault();
+    if (newTaskText.trim()) {
+      const newTask = {
+        id: `task_${Date.now()}`,
+        text: newTaskText.trim(),
+        completed: false,
+      };
+      setTasks(prev => [...prev, newTask]);
+      setNewTaskText('');
+    }
+  };
+
+  const handleToggleTask = (taskId) => {
+    setTasks(prev =>
+      prev.map(task =>
+        task.id === taskId ? { ...task, completed: !task.completed } : task
+      )
+    );
+  };
+
+  const handleDeleteTask = (taskId) => {
+    setTasks(prev => prev.filter(task => task.id !== taskId));
+  };
+
+  const completedTasks = tasks.filter(t => t.completed);
+  const pendingTasks = tasks.filter(t => !t.completed);
+
+  return (
+    React.createElement('div', { className: "flex flex-col h-full bg-primary text-light font-sans" },
+      React.createElement('header', { className: "flex items-center gap-3 p-4 border-b border-secondary shadow-md" },
+        React.createElement(CheckSquareIcon, { className: "w-6 h-6 text-accent" }),
+        React.createElement('h1', { className: "text-xl font-bold text-white" }, "My Tasks")
+      ),
+      React.createElement('div', { className: "flex-1 overflow-y-auto p-4 md:p-6" },
+        React.createElement('div', { className: "max-w-2xl mx-auto" },
+          React.createElement('form', { onSubmit: handleAddTask, className: "flex gap-2 mb-6" },
+            React.createElement('input', {
+              type: "text",
+              value: newTaskText,
+              onChange: (e) => setNewTaskText(e.target.value),
+              placeholder: "Add a new task...",
+              className: "flex-1 bg-secondary border border-slate-600 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-accent"
+            }),
+            React.createElement('button', {
+              type: "submit",
+              className: "p-2 bg-accent rounded-md text-white hover:bg-opacity-90 disabled:bg-gray-500",
+              disabled: !newTaskText.trim(),
+              'aria-label': "Add task"
+            },
+              React.createElement(PlusIcon, { className: "w-5 h-5" })
+            )
+          ),
+          React.createElement('h2', { className: "text-lg font-semibold text-super-light mb-2" }, `To Do (${pendingTasks.length})`),
+          React.createElement('ul', { className: "space-y-2 mb-6" },
+            pendingTasks.length > 0 
+                ? pendingTasks.map(task => (
+                    React.createElement('li', { key: task.id, className: "flex items-center gap-3 bg-secondary p-3 rounded-md animate-fade-in" },
+                        React.createElement('input', { type: "checkbox", checked: task.completed, onChange: () => handleToggleTask(task.id), className: "w-5 h-5 bg-primary border-slate-500 rounded text-accent focus:ring-accent" }),
+                        React.createElement('span', { className: "flex-1" }, task.text),
+                        React.createElement('button', { onClick: () => handleDeleteTask(task.id), className: "p-1 text-super-light hover:text-red-400" }, React.createElement(TrashIcon, { className: "w-4 h-4" }))
+                    )
+                  ))
+                : React.createElement('p', { className: "text-sm text-super-light" }, "Nothing to do!")
+          ),
+          React.createElement('h2', { className: "text-lg font-semibold text-super-light mb-2" }, `Completed (${completedTasks.length})`),
+          React.createElement('ul', { className: "space-y-2" },
+            completedTasks.length > 0
+                ? completedTasks.map(task => (
+                    React.createElement('li', { key: task.id, className: "flex items-center gap-3 bg-secondary p-3 rounded-md opacity-60 animate-fade-in" },
+                        React.createElement('input', { type: "checkbox", checked: task.completed, onChange: () => handleToggleTask(task.id), className: "w-5 h-5 bg-primary border-slate-500 rounded text-accent focus:ring-accent" }),
+                        React.createElement('span', { className: "flex-1 line-through" }, task.text),
+                        React.createElement('button', { onClick: () => handleDeleteTask(task.id), className: "p-1 text-super-light hover:text-red-400" }, React.createElement(TrashIcon, { className: "w-4 h-4" }))
+                    )
+                  ))
+                : React.createElement('p', { className: "text-sm text-super-light" }, "No completed tasks yet.")
+          )
+        )
+      ),
+       React.createElement('style', null, `
+            .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        `)
+    )
+  );
+};
+
+const Sidebar = ({ userName, sessions, activeSessionId, onNewSession, onSelectSession, onDeleteSession, onSignOut, activeView, onSelectView }) => {
+  return (
+    React.createElement('div', { className: "flex flex-col w-64 md:w-72 bg-secondary border-r border-slate-600 h-screen" },
+      React.createElement('div', { className: "p-4 border-b border-slate-600" },
+        React.createElement('div', { className: "flex items-center gap-3" },
+          React.createElement('div', { className: "p-2 bg-accent rounded-lg" },
+            React.createElement(SparkleIcon, { className: "w-6 h-6 text-white"})
+          ),
+          React.createElement('h1', { className: "text-2xl font-bold text-white" }, "Landino")
+        )
+      ),
+      React.createElement('div', { className: "p-2" },
+        React.createElement('button', {
+          onClick: onNewSession,
+          className: "w-full flex items-center gap-2 p-2 rounded-md text-sm font-medium text-light bg-slate-600 hover:bg-slate-500 transition-colors"
+        },
+          React.createElement(PlusIcon, { className: "w-5 h-5" }),
+          "New Chat"
+        )
+      ),
+      React.createElement('nav', { className: "flex-1 overflow-y-auto p-2 space-y-1" },
+        React.createElement('h3', { className: "px-2 pt-2 pb-1 text-xs font-semibold text-super-light uppercase tracking-wider" }, "Chats"),
+        sessions.map(session => (
+          React.createElement('a', {
+            key: session.id,
+            href: "#",
+            onClick: (e) => {
+                e.preventDefault();
+                onSelectView('chat');
+                onSelectSession(session.id);
+            },
+            className: `group flex items-center justify-between p-2 text-sm rounded-md transition-colors ${
+              activeSessionId === session.id && activeView === 'chat' ? 'bg-accent text-white' : 'text-light hover:bg-slate-700'
+            }`
+          },
+            React.createElement('div', { className: "flex items-center gap-2 truncate" },
+              React.createElement(MessageSquareIcon, { className: "w-4 h-4 flex-shrink-0" }),
+              React.createElement('span', { className: "truncate" }, session.title)
+            ),
+            React.createElement('button', {
+              onClick: (e) => {
+                e.stopPropagation();
+                onDeleteSession(session.id);
+              },
+              className: "p-1 rounded-md text-super-light opacity-0 group-hover:opacity-100 hover:text-white hover:bg-slate-600",
+              'aria-label': "Delete chat"
+            },
+              React.createElement(TrashIcon, { className: "w-4 h-4" })
+            )
+          )
+        )),
+        React.createElement('h3', { className: "px-2 pt-4 pb-1 text-xs font-semibold text-super-light uppercase tracking-wider" }, "Tools"),
+        React.createElement('a', {
+          href: "#",
+          onClick: (e) => {
+            e.preventDefault();
+            onSelectView('tasks');
+          },
+          className: `group flex items-center gap-2 p-2 text-sm rounded-md transition-colors ${
+              activeView === 'tasks' ? 'bg-accent text-white' : 'text-light hover:bg-slate-700'
+          }`
+        },
+          React.createElement(CheckSquareIcon, { className: "w-4 h-4 flex-shrink-0" }),
+          React.createElement('span', null, "Tasks")
+        )
+      ),
+      React.createElement('div', { className: "p-4 border-t border-slate-600" },
+        React.createElement('div', { className: "flex items-center justify-between" },
+            React.createElement('span', { className: "text-sm font-medium text-white truncate" }, `Welcome, ${userName}`),
+            React.createElement('button', { onClick: onSignOut, className: "p-2 rounded-md text-super-light hover:text-white hover:bg-slate-700", 'aria-label': "Sign out" },
+                React.createElement(LogOutIcon, { className: "w-5 h-5"})
+            )
+        )
+      )
+    )
+  );
+};
+
+const fileToGenerativePart = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      const base64Data = dataUrl.substring(dataUrl.indexOf(',') + 1);
+      resolve({
+        dataUrl,
+        apiPart: { inlineData: { data: base64Data, mimeType: file.type } },
+      });
+    };
+    reader.onerror = (err) => reject(err);
+    reader.readAsDataURL(file);
+  });
+};
+
+const ChatView = ({ session, onUpdateSession }) => {
+  const [messages, setMessages] = useState(session.messages);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const chatContainerRef = useRef(null);
+  const [chatSession, setChatSession] = useState(null);
+  const [ai, setAi] = useState(null);
+
+  useEffect(() => {
+    setMessages(session.messages);
+  }, [session]);
+  
+  useEffect(() => {
+    if (JSON.stringify(session.messages) !== JSON.stringify(messages)) {
+      onUpdateSession(session.id, messages);
+    }
+  }, [messages, session.id]);
+
+  useEffect(() => {
+    try {
+      const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      setAi(genAI);
+      
+      const history = session.messages
+        .filter(m => !m.isLoading && !m.generatedImageUrl)
+        .map(m => {
+            const parts = [];
+            if (m.content) {
+                parts.push({ text: m.content });
+            }
+            if (m.role === 'user' && m.image) {
+                try {
+                    const [meta, base64Data] = m.image.split(',');
+                    const mimeType = meta.match(/:(.*?);/)?.[1];
+                    if (mimeType && base64Data) {
+                        parts.push({ inlineData: { mimeType: mimeType, data: base64Data } });
+                    }
+                } catch(e) {
+                    console.error("Could not parse image for history", e);
+                }
+            }
+            return {
+                role: m.role,
+                parts: parts.filter(p => p != null),
+            };
+        });
+
+      const newChatSession = genAI.chats.create({
+        model: 'gemini-2.5-flash-preview-04-17',
+        history: history,
+        config: {
+          systemInstruction: 'You are Landino, a friendly, creative, and highly intelligent AI assistant. Your answers are helpful and formatted in clear markdown. When analyzing images, be descriptive and insightful.',
+        },
+      });
+      setChatSession(newChatSession);
+    } catch(e) {
+        console.error("Failed to initialize Gemini AI", e);
+        setError("Failed to initialize AI. Please check your API key and refresh.");
+    }
+  }, [session.id, session.messages]);
+
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const handleImageGeneration = useCallback(async (prompt, modelMessageId) => {
+    if (!ai) {
+        setError("AI not initialized");
+        setIsLoading(false);
+        return;
+    }
+    setMessages(prev => [...prev, { id: modelMessageId, role: 'model', content: '', isLoading: true }]);
+    try {
+        const response = await ai.models.generateImages({
+            model: 'imagen-3.0-generate-002',
+            prompt: prompt,
+            config: { numberOfImages: 1, outputMimeType: 'image/jpeg' },
+        });
+
+        const imageUrl = `data:image/jpeg;base64,${response.generatedImages[0].image.imageBytes}`;
+        
+        setMessages(prev => prev.map(msg => 
+            msg.id === modelMessageId 
+            ? { ...msg, isLoading: false, generatedImageUrl: imageUrl, content: `Generated image for: "${prompt}"` } 
+            : msg
+        ));
+
+    } catch(e) {
+        console.error("Image generation error:", e);
+        let errorMessage = `Sorry, I couldn't generate an image. Error: ${e.message}`;
+        if (e.message && String(e.message).includes('403')) {
+            errorMessage = "Image generation failed due to a permission error. Please ensure your API key is valid and has the Imagen API enabled in your Google Cloud project.";
+        }
+        setMessages(prev => prev.map(msg => 
+            msg.id === modelMessageId 
+            ? { ...msg, isLoading: false, content: errorMessage } 
+            : msg
+        ));
+    } finally {
+        setIsLoading(false);
+    }
+  }, [ai]);
+
+  const handleChat = useCallback(async (text, imagePart, modelMessageId) => {
+    if (!chatSession) {
+        setError("Chat session not initialized");
+        setIsLoading(false);
+        return;
+    }
+    setMessages(prev => [...prev, { id: modelMessageId, role: 'model', content: '', isLoading: true }]);
+    
+    try {
+      const parts = [];
+      if(text.trim()) parts.push({ text });
+      if (imagePart) {
+        parts.push(imagePart);
+      }
+      
+      const stream = await chatSession.sendMessageStream({ message: parts });
+
+      let fullResponse = '';
+      for await (const chunk of stream) {
+        fullResponse += chunk.text;
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === modelMessageId ? { ...msg, content: fullResponse, isLoading: true } : msg
+          )
+        );
+      }
+
+       setMessages(prev =>
+          prev.map(msg =>
+            msg.id === modelMessageId ? { ...msg, content: fullResponse, isLoading: false } : msg
+          )
+        );
+
+    } catch (e) {
+      console.error("Error sending message:", e);
+      let errorMessage = "Sorry, something went wrong. Please try again.";
+      if (e.message && String(e.message).includes('403')) {
+         errorMessage = "Access to the AI service was denied. This can happen if the API key is incorrect or the Google AI Platform APIs are not enabled for your project.";
+      }
+      setError(errorMessage);
+      setMessages(prev => prev.filter(msg => msg.id !== modelMessageId));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [chatSession]);
+
+  const sendMessage = useCallback(async (text, imageFile) => {
+    if (isLoading || (!text.trim() && !imageFile)) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    const userMessage = {
+      id: `msg_${Date.now()}`,
+      role: 'user',
+      content: text,
+    };
+    
+    let imagePart = null;
+    if (imageFile) {
+        try {
+            const { dataUrl, apiPart } = await fileToGenerativePart(imageFile);
+            userMessage.image = dataUrl;
+            imagePart = apiPart;
+        } catch (e) {
+            setError("Error processing image. Please try another file.");
+            setIsLoading(false);
+            return;
+        }
+    }
+
+    setMessages(prev => [...prev, userMessage]);
+
+    const modelMessageId = `msg_${Date.now() + 1}`;
+
+    if (text.trim().startsWith('/imagine')) {
+      handleImageGeneration(text.trim().replace('/imagine', '').trim(), modelMessageId);
+      return;
+    }
+
+    handleChat(text, imagePart, modelMessageId);
+
+  }, [isLoading, handleImageGeneration, handleChat]);
+
+  return (
+    React.createElement('div', { className: "flex flex-col h-full bg-primary" },
+      React.createElement('header', { className: "flex items-center p-4 border-b border-secondary shadow-md" },
+        React.createElement('h1', { className: "text-xl font-bold text-white truncate" }, session.title)
+      ),
+      React.createElement('div', { ref: chatContainerRef, className: "flex-1 overflow-y-auto p-4 md:p-6 space-y-6" },
+        messages.length === 0 ? (
+          React.createElement(WelcomeScreen, { onPromptClick: sendMessage })
+        ) : (
+          messages.map(msg => React.createElement(ChatMessage, { key: msg.id, message: msg }))
+        )
+      ),
+      React.createElement('footer', { className: "p-4 border-t border-secondary bg-primary" },
+        error && React.createElement('p', { className: "text-red-400 text-center text-sm mb-2" }, error),
+        React.createElement(ChatInput, { 
+          onSendMessage: sendMessage, 
+          isLoading: isLoading, 
+          hint: "Use /imagine <prompt> to generate an image."
+        })
+      )
+    )
+  );
+};
+
+//================================================================
+// INLINED: App.tsx (Main Component)
+//================================================================
+
+const App = () => {
+  const [userName, setUserName] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [activeSessionId, setActiveSessionId] = useState(null);
+  const [tasks, setTasks] = useState([]);
+  const [activeView, setActiveView] = useState('chat');
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  
+  useEffect(() => {
+    try {
+      const storedName = localStorage.getItem('landino_userName');
+      if (storedName) {
+        setUserName(storedName);
+        
+        const storedSessions = localStorage.getItem(`${storedName}_landino_sessions`);
+        const storedActiveId = localStorage.getItem(`${storedName}_landino_activeSessionId`);
+        const storedTasks = localStorage.getItem(`${storedName}_landino_tasks`);
+
+        if (storedSessions) setSessions(JSON.parse(storedSessions));
+        if (storedActiveId) setActiveSessionId(storedActiveId);
+        if (storedTasks) setTasks(JSON.parse(storedTasks));
+        
+      } else {
+        setIsSignInModalOpen(true);
+      }
+    } catch (error) {
+        console.error("Failed to parse from localStorage", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (userName) {
+      try {
+        localStorage.setItem(`${userName}_landino_sessions`, JSON.stringify(sessions));
+        if(activeSessionId) localStorage.setItem(`${userName}_landino_activeSessionId`, activeSessionId);
+        localStorage.setItem(`${userName}_landino_tasks`, JSON.stringify(tasks));
+      } catch (error) {
+         console.error("Failed to save to localStorage", error);
+      }
+    }
+  }, [sessions, activeSessionId, tasks, userName]);
+
+  const handleSignIn = (name) => {
+    const sanitizedName = name.trim();
+    if (sanitizedName) {
+      setUserName(sanitizedName);
+      localStorage.setItem('landino_userName', sanitizedName);
+      setIsSignInModalOpen(false);
+      const storedSessions = localStorage.getItem(`${sanitizedName}_landino_sessions`);
+      if (storedSessions) {
+        setSessions(JSON.parse(storedSessions));
+        const storedActiveId = localStorage.getItem(`${sanitizedName}_landino_activeSessionId`);
+        setActiveSessionId(storedActiveId || null);
+      } else {
+        handleCreateNewSession();
+      }
+    }
+  };
+
+  const handleSignOut = () => {
+    setUserName(null);
+    setSessions([]);
+    setActiveSessionId(null);
+    setTasks([]);
+    localStorage.removeItem('landino_userName');
+    setIsSignInModalOpen(true);
+  };
+
+  const handleCreateNewSession = () => {
+    const newSession = {
+      id: `session_${Date.now()}`,
+      title: 'New Chat',
+      messages: [],
+    };
+    setSessions(prev => [newSession, ...prev]);
+    setActiveSessionId(newSession.id);
+    setActiveView('chat');
+  };
+
+  const handleDeleteSession = (sessionId) => {
+    setSessions(prev => prev.filter(s => s.id !== sessionId));
+    if (activeSessionId === sessionId) {
+      const remainingSessions = sessions.filter(s => s.id !== sessionId);
+      setActiveSessionId(remainingSessions.length > 0 ? remainingSessions[0].id : null);
+    }
+  };
+
+  const handleUpdateSession = useCallback((sessionId, updatedMessages) => {
+    setSessions(prev => prev.map(session => {
+      if (session.id === sessionId) {
+        const newTitle = (session.title === 'New Chat' || session.messages.length === 0) && updatedMessages.length > 0
+          ? updatedMessages.find(m => m.role === 'user')?.content.substring(0, 30) || 'Chat'
+          : session.title;
+        return { ...session, messages: updatedMessages, title: newTitle };
+      }
+      return session;
+    }));
+  }, []);
+
+  const activeSession = useMemo(() => {
+    return sessions.find(s => s.id === activeSessionId) || null;
+  }, [sessions, activeSessionId]);
+
+  if (!userName) {
+     return React.createElement(SignInModal, { isOpen: isSignInModalOpen, onSignIn: handleSignIn });
+  }
+
+  return (
+    React.createElement('div', { className: "flex h-screen bg-primary text-light font-sans" },
+      React.createElement(Sidebar, {
+        userName: userName,
+        sessions: sessions,
+        activeSessionId: activeSessionId,
+        onNewSession: handleCreateNewSession,
+        onSelectSession: setActiveSessionId,
+        onDeleteSession: handleDeleteSession,
+        onSignOut: handleSignOut,
+        activeView: activeView,
+        onSelectView: setActiveView
+      }),
+      React.createElement('main', { className: "flex-1 flex flex-col" },
+        activeView === 'chat' && activeSession ? (
+          React.createElement(ChatView, { key: activeSession.id, session: activeSession, onUpdateSession: handleUpdateSession })
+        ) : activeView === 'tasks' ? (
+          React.createElement(TasksView, { tasks: tasks, setTasks: setTasks })
+        ) : (
+          React.createElement('div', { className: "flex-1 flex items-center justify-center" },
+            React.createElement('div', { className: "text-center" },
+                React.createElement('h2', { className: "text-2xl text-super-light" }, "Select a chat or start a new one.")
+            )
+          )
+        )
+      )
+    )
+  );
+};
+
+//================================================================
+// INLINED: index.tsx (App Entry Point)
+//================================================================
+
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error("Could not find root element to mount to");
+}
+
+const root = ReactDOM.createRoot(rootElement);
+root.render(
+  React.createElement(React.StrictMode, null,
+    React.createElement(App)
+  )
+);
+
+    </script>
+  </body>
+</html>
